@@ -30,6 +30,7 @@ async function setSchema(dgraphClient) {
         married: bool .
         loc: geo .
         dob: datetime .
+        password: password .
     `;
     await dgraphClient.alter({ schema: schema });
 }
@@ -43,9 +44,11 @@ async function createData(dgraphClient) {
     try {
         // Create data.
         let pass = faker.internet.password();
+        var options = { min: 22, max: 58 };
         const p = {
             name: nameit,
-            age: 26,
+            age: faker.random.number(options), 
+            image: faker.image.avatar(),
             married: faker.random.boolean(),
             email: faker.internet.email(),
             Address: faker.address.streetAddress(),
@@ -100,18 +103,8 @@ async function queryData(dgraphClient) {
     const query = `query all($a: string) {
         all(func: eq(name, $a)) {
             uid
-            name
-            age
-            married
-            loc
-            dob
-            friend {
-                name
-                age
-            }
-            school {
-                name
-            }
+            expand(_all_)
+            predicate_list : _predicate_
         }
     }`;
     const vars = { $a: nameit };
@@ -127,7 +120,7 @@ async function main() {
     const dgraphClientStub = newClientStub();
     const dgraphClient = newClient(dgraphClientStub);
 //    await dropAll(dgraphClient);
-//    await setSchema(dgraphClient);
+    await setSchema(dgraphClient);
     await createData(dgraphClient);
     await queryData(dgraphClient);
 }
